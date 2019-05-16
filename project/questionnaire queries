@@ -1,0 +1,77 @@
+1.)
+select sum(reservation_count) from (
+select count(member_id) as reservation_count FROM Club_Reservation
+where signed_in_at is not NULL 
+group by member_id
+union 
+select count(member_id) as reservation_count from MBO_Reservations
+where checked_in_at is not NULL 
+group by member_id)
+;
+
+
+2.)
+select s.studio_key, a.no_show_cnt from (	
+	select studio_id,no_show_cnt,
+	 DENSE_RANK() OVER (ORDER BY no_show_cnt desc) as row_cnt from( 
+		select studio_id,count(member_id) as no_show_cnt
+		from MBO_Reservations
+		where checked_in_at is  NULL and canceled_at is NULL
+		group by studio_id
+		UNION
+		select studio_id,count(member_id) as no_show_cnt FROM Club_Reservation
+		where canceled = 'f' and signed_in_at is null
+		group by studio_id
+		order by count(member_id) desc)) a
+		inner join Studio s
+		on s.id = a.studio_id
+		where row_cnt = 1
+		;
+
+3.)
+select c.class_tag, a.reservation_count from (
+select class_id,reservation_count,
+ DENSE_RANK() OVER (ORDER BY reservation_count desc) as row_cnt from (
+select class_id, count(member_id) as reservation_count FROM Club_Reservation
+where cast(signed_in_at as text) between '2018-02-01' and '2018-02-28'
+group by class_id
+union 
+select class_id, count(member_id) as reservation_count from MBO_Reservations
+where cast(checked_in_at as text) between '2018-02-01' and '2018-02-28'
+group by class_id))a
+		inner join Class c
+		on c.id = a.class_id
+		where row_cnt = 1
+		;
+4.)
+SELECT sum(member_cnt) from (
+select count(member_id) as member_cnt from (
+select a.member_id,a.checked_in_at,b.canceled_at from 
+(select member_id,count(checked_in_at) as checked_in_at from MBO_Reservations
+where cast(checked_in_at as text) between '2018-01-01' and '2018-01-31'
+group by member_id
+order by member_id) a
+left outer join
+(select member_id,count(canceled_at) as canceled_at from MBO_Reservations
+where cast(canceled_at as text) between '2018-01-01' and '2018-01-31'
+group by member_id
+order by member_id) b
+on a.member_id = b.member_id
+where a.checked_in_at > 0 and (b.canceled_at < 2 or b.canceled_at is null))
+UNION
+select count(member_id) as member_cnt from (
+select a.member_id,a.checked_in_at,b.canceled_at from 
+(select member_id,count(signed_in_at) as checked_in_at from Club_Reservation
+where cast(signed_in_at as text) between '2018-01-01' and '2018-01-31'
+group by member_id
+order by member_id) a
+left outer join
+(select member_id,count(reserved_for) as canceled_at from Club_Reservation
+where cast(reserved_for as text) between '2018-01-01' and '2018-01-31'
+and canceled = 't'
+group by member_id
+order by member_id) b
+on a.member_id = b.member_id
+where a.checked_in_at > 0 and (b.canceled_at < 2 or b.canceled_at is null))
+)
+;
