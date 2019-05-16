@@ -1,0 +1,42 @@
+{
+  "MBO_RESERVATION": {
+    "file_pattern": "mbo-reservations*.csv",
+    "table_dict" : {"Studio":["studio_key","studio_address_street","studio_address_city","studio_address_state","studio_address_zip"]
+        ,"Class":["class_tag"]
+        ,"MBO_Reservations":["member_id","studio_id","class_id","viewed_at","reserved_at","canceled_at","class_time_at","checked_in_at"]
+        },
+    "date_cols":["viewed_at","reserved_at","canceled_at"],
+    "check_nulls":["studio_key","member_id"],
+    "col_cnt":"12",
+    "Studio_insert": "",
+    "Class_insert": "",
+    "MBO_Reservations_insert":[ "insert into MBO_Reservations ('member_id','studio_id','class_id','viewed_at','reserved_at','canceled_at','class_time_at','checked_in_at')",
+        "SELECT t.member_id,s.id,c.id,t.viewed_at, t.reserved_at,t.canceled_at,t.class_time_at,t.checked_in_at",
+        "from MBO_Reservations_temp t",
+        "inner join Class c",
+        "on t.class_tag = c.class_tag",
+		"inner join Studio s",
+		"on t.studio_key = s.studio_key"]
+ },
+ 
+  "CLUB_RESERVATION": {
+    "file_pattern": "club-ready-reservations*.csv",
+    "table_dict" : {"Studio":["studio_key"]
+        ,"Club_Reservation":["member_id","studio_key","class_tag","instructor_full_name","level","canceled","reserved_for","signed_in_at"]
+    },
+    "date_cols":["reserved_for","signed_in_at"],
+    "check_nulls":["studio_key","member_id"],
+    "col_cnt":"8",
+    "Studio_insert": "",
+    "Club_Reservation_insert":[ "insert into Club_Reservation ('member_id','studio_id','class_id','instructor_full_name','level','canceled','reserved_for','signed_in_at')",
+        "SELECT t.member_id,s.id,c.id, t.instructor_full_name,t.level,t.canceled,t.reserved_for,t.signed_in_at ",
+        "from Club_Reservation_temp t",
+        "inner join Class c",
+        "on t.class_tag = c.class_tag",
+		"inner join Studio s",
+		"on t.studio_key = s.studio_key"]
+ }            
+}
+
+
+
